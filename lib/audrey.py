@@ -345,6 +345,7 @@ def feedme(feed="", type=""):
             matches = re.findall(regex, next)
             if matches:
                 nextlink=util.replaceParts(site['items'][level][pos]['next_url'], matches)
+                extras['pos']=pos
                 util.logError(nextlink)
                 menu.append({
                     "title": "Next Page >",
