@@ -17,6 +17,7 @@ if not os.path.exists(profileDir):
     os.makedirs(profileDir) 
            
 def get(path, args={}):
+    #logError(path)
     r = requests.get(path, data=args, headers = {'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_10_1) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/39.0.2171.95 Safari/537.36'}, verify=False)
     #logError(r.text)
     return r.text
@@ -260,13 +261,41 @@ def getFile(feed="", type=""):
         sys.exit()
         
 def prepare(string):
+    #logError(string.replace("?", "\?").replace("{*}", "[\s\S]*?").replace("{%}", "([\s\S]*?)"))
     return string.replace("?", "\?").replace("{*}", "[\s\S]*?").replace("{%}", "([\s\S]*?)")
 
 def replaceParts(string, match):
     for x in range(0, len(match)):
-        string=string.replace("{%"+str(x+1)+"}", match[x])
+        try:
+            string=string.replace("{%"+str(x+1)+"}", match[x])
+        except:
+            string=string.replace("{%"+str(x+1)+"}", str(match[x]))
     return string
-    
+
+def execPy(string):
+    #logError(string)
+    if "{{" and "}}" in string:
+        string = string.replace("{{", "").replace("}}", "")
+        #logError(string)
+        with stdoutIO() as s:
+            exec(string)
+        #logError(s.getvalue().replace("\n", "").replace("\r", ""))
+        return s.getvalue().replace("\n", "").replace("\r", "")
+    else:
+        return string
+        
+import sys
+import StringIO
+import contextlib
+
+@contextlib.contextmanager
+def stdoutIO(stdout=None):
+    old = sys.stdout
+    if stdout is None:
+        stdout = StringIO.StringIO()
+    sys.stdout = stdout
+    yield stdout
+
 from HTMLParser import HTMLParser
 
 class MLStripper(HTMLParser):

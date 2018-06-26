@@ -16,7 +16,7 @@ def feedme(feed="", type=""):
     colour = ["black", "white", "gray", "blue", "teal", "fuchsia", "indigo", "turquoise", "cyan", "greenyellow", "lime", "green", "olive", "gold", "yello", "lavender", "pink", "magenta", "purple", "maroon", "chocolate", "orange", "red", "brown"]
     parameters=util.parseParameters()
     
-    util.logError(str(parameters))
+    #util.logError(str(parameters))
     
     try:
         mode=int(parameters["mode"])
@@ -25,6 +25,7 @@ def feedme(feed="", type=""):
     
     try:
         offsite=ast.literal_eval(parameters['extras'])
+        #util.logError(str(offsite))
         if "site_xml" in offsite:
             feed=offsite['site_xml']
             type="url"
@@ -292,7 +293,7 @@ def feedme(feed="", type=""):
             counter=0
             for match in matches:
                 try:
-                    title=h.unescape(util.replaceParts(site['items'][level][pos]['name'], matches[counter]).replace('\n', '').replace('\t', '').lstrip())
+                    title=h.unescape(util.replaceParts(site['items'][level][pos]['name'], matches[counter]).replace('\n', '').replace('\t', '').replace("\\", "").lstrip())
                 except:
                     title=""
                 try:
@@ -344,9 +345,13 @@ def feedme(feed="", type=""):
             regex = util.prepare(site['items'][level][pos]['next_pattern'])
             matches = re.findall(regex, next)
             if matches:
-                nextlink=util.replaceParts(site['items'][level][pos]['next_url'], matches)
+                parts = []
+                for match in matches:
+                    parts.append(match)
+                nextlink=util.execPy(util.replaceParts(site['items'][level][pos]['next_url'], match))
                 extras['pos']=pos
-                util.logError(nextlink)
+                #util.logError(nextlink)
+                
                 menu.append({
                     "title": "Next Page >",
                     "url": urllib.quote_plus(nextlink),
@@ -387,7 +392,7 @@ def feedme(feed="", type=""):
             
             if len(site['items'][extras['level']])>pos+1:
                 # another level is needed
-                extras['pos']=0
+                extras['pos']=1
                 newMode="2"
                 isFolder=True
                 isPlayable=True
@@ -396,7 +401,6 @@ def feedme(feed="", type=""):
                 newMode="111" # find source
                 isFolder=False
                 isPlayable=True
-            
             page=util.get(site['search_url'].replace("{%}", term))
             next=page
             
@@ -422,6 +426,7 @@ def feedme(feed="", type=""):
                         title=""
                     try:
                         url=util.replaceParts(site['items'][level][pos]['url'], matches[counter]).encode('utf-8')
+                        #util.logError(url)
                     except:
                         url=""
                     try:
@@ -469,7 +474,10 @@ def feedme(feed="", type=""):
                 regex = util.prepare(site['items'][level][pos]['next_pattern'])
                 matches = re.findall(regex, next)
                 if matches:
-                    nextlink=urllib.quote_plus(util.replaceParts(site['items'][level][pos]['next_url'], matches))
+                    parts = []
+                    for match in matches:
+                        parts.append(match)
+                    nextlink=util.execPy(util.replaceParts(site['items'][level][pos]['next_url'], match))
                     menu.append({
                         "title": "Next Page >",
                         "url": nextlink,

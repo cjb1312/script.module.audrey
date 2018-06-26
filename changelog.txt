@@ -1,3 +1,9 @@
+v1.1.5 - 26/06/2018
+- added ability to include python in links by wrapping it in {{ code goes here }}
+
+v1.1.4 - 10/06/2018
+- fixed issue with multi leveled next pages
+
 v1.0.6 - 24/02/2018
 - fixed incorrect variable name
 
