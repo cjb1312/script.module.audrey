@@ -271,7 +271,6 @@ def feedme(feed="", type=""):
                 isFolder=False
             
         #util.alert(newMode)
-        
         page=util.get(h.unescape(parameters['url']))
         next=page
         
@@ -296,10 +295,12 @@ def feedme(feed="", type=""):
                     title=h.unescape(util.replaceParts(site['items'][level][pos]['name'], matches[counter]).replace('\n', '').replace('\t', '').replace("\\", "").lstrip())
                 except:
                     title=""
-                try:
-                    url=urllib.quote_plus(util.replaceParts(site['items'][level][pos]['url'], matches[counter]))
-                except:
-                    url=""
+                #try:
+                #    util.alert(site['items'][level][pos]['url'])
+                url=urllib.quote_plus(util.replaceParts(site['items'][level][pos]['url'], matches[counter]))
+                #    util.alert(">>"+url)
+                #except:
+                #    url=""
                 try:
                     poster=util.replaceParts(site['items'][level][pos]['poster'], matches[counter]).encode('utf-8')
                 except:
@@ -346,12 +347,16 @@ def feedme(feed="", type=""):
             matches = re.findall(regex, next)
             if matches:
                 parts = []
-                for match in matches:
-                    parts.append(match)
-                nextlink=util.execPy(util.replaceParts(site['items'][level][pos]['next_url'], match))
+                if len(matches) > 1:
+                    for match in matches:
+                        parts.append(match)
+                else:
+                    match = matches
+
+                #nextlink=util.execPy(util.replaceParts(site['items'][level][pos]['next_url'], match))
+                nextlink=util.replaceParts(site['items'][level][pos]['next_url'], match)
                 extras['pos']=pos
-                #util.logError(nextlink)
-                
+
                 menu.append({
                     "title": "Next Page >",
                     "url": urllib.quote_plus(nextlink),
@@ -364,7 +369,8 @@ def feedme(feed="", type=""):
                     "isFolder":True,
                     "extras":str(extras)
                 })
-        except:
+        except Exception as e:
+            util.logError(str(e))
             pass
         util.addMenuItems(menu)
     elif mode==3:
@@ -398,10 +404,20 @@ def feedme(feed="", type=""):
                 isPlayable=True
             else:
                 # on a level where next move is to check for sources
-                newMode="111" # find source
-                isFolder=False
-                isPlayable=True
-            page=util.get(site['search_url'].replace("{%}", term))
+                if site['items'][extras['level']][pos]['play_media'] == "multiple":
+                    newMode="113"
+                    isFolder=True
+                    isPlayable=False
+                else:
+                    newMode="111" # find source
+                    isFolder=False
+                    isPlayable=True
+            if "{{" in site['search_url'] and "}}" in site['search_url']:
+                url =  util.execPy(site['search_url'].replace("{%}", term))
+            else:
+                url = site['search_url'].replace("{%}", term)
+            util.logError(url)
+            page=util.get(url)
             next=page
             
             try:
@@ -475,9 +491,17 @@ def feedme(feed="", type=""):
                 matches = re.findall(regex, next)
                 if matches:
                     parts = []
-                    for match in matches:
-                        parts.append(match)
-                    nextlink=util.execPy(util.replaceParts(site['items'][level][pos]['next_url'], match))
+                    """for match in matches:
+                        parts.append(match)"""
+
+                    if len(matches) > 1:
+                        for match in matches:
+                            parts.append(match)
+                        else:
+                            match = matches
+
+                    #nextlink=util.execPy(util.replaceParts(site['items'][level][pos]['next_url'], match))
+                    nextlink=util.replaceParts(site['items'][level][pos]['next_url'], match)
                     menu.append({
                         "title": "Next Page >",
                         "url": nextlink,
@@ -604,30 +628,34 @@ def feedme(feed="", type=""):
             util.playMedia(parameters['name'], parameters['poster'], parameters['url'], force=True)
         else:
             #search for video urls
+            if "urlresolver" in site and site['urlresolver'].lower()=="false":
+                regex="\"([^\s]*?\.(:?"+"|".join(filetypes)+"))\""
+                matches = re.findall(regex, page)
+            else:
+                regex="(\/\/.*?\/embed.*?)[\?\"]"
+                matches = re.findall(regex, page)
+                regex="\"((?:http:|https:)?\/\/.*?\/watch.*?)[\"]"
+                matches = matches + re.findall(regex, page)
+                matches2=urlresolver.scrape_supported(page)
+                #util.alert(str(matches))
+                """regex="\"(https?://("+"|".join(supports)+")\..*?)\""
+                matches2 = re.findall(regex, page)
+                regex="\"((?:http:|https:)?\/\/.*?\/watch.*?)[\"]"
+                matches3 = re.findall(regex, page)
+                regex = 'https?://(.*?(?:\.googlevideo|(?:plus|drive|get|docs)\.google|google(?:usercontent|drive|apis))\.com)/(.*?(?:videoplayback\?|[\?&]authkey|host/)*.+)'
+                matches4 = re.findall(regex, page)
+                
+                matches2=[ x for x in matches2 if any(sup in x for sup in supports) ]
+                matches3=[ x for x in matches3 if any(sup in x for sup in supports) ]"""
             
-            regex="(\/\/.*?\/embed.*?)[\?\"]"
-            matches = re.findall(regex, page)
-            regex="\"((?:http:|https:)?\/\/.*?\/watch.*?)[\"]"
-            matches = matches + re.findall(regex, page)
-            matches2=urlresolver.scrape_supported(page)
-            #util.alert(str(matches))
-            """regex="\"(https?://("+"|".join(supports)+")\..*?)\""
-            matches2 = re.findall(regex, page)
-            regex="\"((?:http:|https:)?\/\/.*?\/watch.*?)[\"]"
-            matches3 = re.findall(regex, page)
-            regex = 'https?://(.*?(?:\.googlevideo|(?:plus|drive|get|docs)\.google|google(?:usercontent|drive|apis))\.com)/(.*?(?:videoplayback\?|[\?&]authkey|host/)*.+)'
-            matches4 = re.findall(regex, page)
-            
-            matches2=[ x for x in matches2 if any(sup in x for sup in supports) ]
-            matches3=[ x for x in matches3 if any(sup in x for sup in supports) ]"""
-            
-            matches=matches+matches2
-            
+                matches=matches+matches2
+            util.logError("''''''''''''''''''''''''''''''''''''''''''''''''''''''")
+            util.logError(">>>>"+str(matches))
             if isinstance(matches[selected_video], tuple):
                 url=matches[selected_video][0]
             else:
                 url=matches[selected_video]
-                
+            #util.alert(url)
             if "http" not in url:
                 url="http:"+url
                 

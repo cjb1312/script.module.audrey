@@ -270,6 +270,7 @@ def replaceParts(string, match):
             string=string.replace("{%"+str(x+1)+"}", match[x])
         except:
             string=string.replace("{%"+str(x+1)+"}", str(match[x]))
+    string = execPy(string)
     return string
 
 def execPy(string):
